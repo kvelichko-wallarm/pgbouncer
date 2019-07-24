@@ -1,0 +1,4 @@
+configargparse
+pyinotify
+psycopg2
+python-json-logger

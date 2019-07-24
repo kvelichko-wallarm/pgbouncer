@@ -1,0 +1,12 @@
+FROM pgbouncer
+
+WORKDIR /opt
+USER root
+
+RUN apk add --update docker python-dev libffi-dev openssl-dev gcc libc-dev make
+RUN pip install docker-compose
+
+COPY test-requirements.txt ./
+RUN pip install -r /opt/test-requirements.txt
+
+ENTRYPOINT ["python"]

@@ -1,0 +1,26 @@
+FROM python:3-alpine as base
+
+FROM base as builder
+
+RUN mkdir /install
+RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev
+WORKDIR /install
+COPY requirements.txt /requirements.txt
+RUN pip install --no-cache-dir --upgrade pip
+RUN pip install --install-option="--prefix=/install" -r /requirements.txt
+
+FROM base
+
+WORKDIR /opt
+
+COPY --from=builder /install /usr/local
+COPY src/configmap-reload.py ./
+COPY src/pgbouncerctl /usr/local/bin/
+RUN apk add --no-cache postgresql-client libpq pgbouncer shadow
+RUN usermod -d /tmp pgbouncer
+
+ENV PGBOUNCER_DATABASE pgbouncer
+
+EXPOSE 5432
+USER pgbouncer
+ENTRYPOINT ["pgbouncer", "/etc/pgbouncer/pgbouncer.ini"]

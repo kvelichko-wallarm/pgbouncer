@@ -1,0 +1,44 @@
+version: '2'
+
+services:
+  pgbouncer:
+    build:
+      context: ../.
+      dockerfile: ./docker/Dockerfile.pgbouncer
+    image: pgbouncer
+    volumes:
+      - "../tests/environment/pgbouncer:/etc/pgbouncer"
+      - "../tests/environment/userlist:/etc/userlist"
+  pg:
+    image: postgres:9.6-alpine
+    restart: always
+    volumes:
+      - "../tests/environment/pg:/docker-entrypoint-initdb.d"
+    environment:
+      POSTGRES_PASSWORD: example
+  control:
+    depends_on: ["pgbouncer"]
+    image: pgbouncer
+    volumes:
+      - "../tests/environment/pgbouncer:/etc/pgbouncer"
+      - "../tests/environment/userlist:/etc/userlist"
+    environment:
+      CONFIG_PATH: /etc/pgbouncer
+      PGBOUNCER_HOST: pgbouncer
+      PGBOUNCER_PORT: 5432
+      PGBOUNCER_USER: admin
+      PGBOUNCER_PASSWORD: qwerty
+      LOG_JSON: 1
+    entrypoint: python
+    command: "/opt/configmap-reload.py -vv"
+#  exporter:
+  test:
+    depends_on: ["pgbouncer"]
+    build:
+      context: ../.
+      dockerfile: ./docker/Dockerfile.test
+    volumes:
+      - "../tests/environment/pgbouncer:/etc/pgbouncer"
+      - "../tests/environment/userlist:/etc/userlist"
+      - "../:/tests"
+      - "/var/run/docker.sock:/var/run/docker.sock"
